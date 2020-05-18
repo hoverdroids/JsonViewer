@@ -115,8 +115,13 @@ public class JsonItemView extends LinearLayout {
         mIvIcon.setContentDescription(getResources().getString(isPlus ? R.string.jsonViewer_icon_plus : R.string.jsonViewer_icon_minus));
     }
 
+    //If anything in this row is clicked, let's expand/collapse because it's too hard to just
+    //click the +/- button
     public void setIconClickListener(OnClickListener listener) {
         mIvIcon.setOnClickListener(listener);
+        mTvLeft.setOnClickListener(listener);
+        mTvRight.setOnClickListener(listener);
+        this.setOnClickListener(listener);
     }
 
     public void addViewNoInvalidate(View child) {
