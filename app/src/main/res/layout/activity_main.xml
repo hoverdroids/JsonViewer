@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/hsv"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-
-    <com.yuyh.jsonviewer.library.JsonRecyclerView
-        android:id="@+id/rv_json"
+    <HorizontalScrollView
+        android:id="@+id/hsv"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:orientation="vertical">
 
-</HorizontalScrollView>
+        <com.yuyh.jsonviewer.library.JsonRecyclerView
+            android:id="@+id/rv_json"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </HorizontalScrollView>
+
+    <Button
+        android:id="@+id/toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:text="Toggle"
+        android:layout_gravity="bottom|end"/>
+</FrameLayout>

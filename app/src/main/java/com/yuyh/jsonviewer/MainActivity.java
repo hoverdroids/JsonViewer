@@ -3,12 +3,15 @@ package com.yuyh.jsonviewer;
 import android.os.Bundle;
 
 import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.HorizontalScrollView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yuyh.jsonviewer.library.JsonRecyclerView;
+import com.yuyh.jsonviewer.library.adapter.JsonViewerAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +20,8 @@ public class MainActivity extends AppCompatActivity {
 
     private JsonRecyclerView mRecyclewView;
     private HorizontalScrollView mHScrollView;
+
+    private boolean isExpanded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 InputStream is = null;
                 try {
-                    is = getAssets().open("demo.json");
+                    is = getAssets().open("demo_smaller.json");
                     int lenght = is.available();
                     byte[] buffer = new byte[lenght];
                     is.read(buffer);
@@ -82,5 +87,18 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }).start();
+
+        View toggle = findViewById(R.id.toggle);
+        toggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isExpanded) {
+                    ((JsonViewerAdapter)mRecyclewView.getAdapter()).collapseAll();
+                } else {
+                    ((JsonViewerAdapter)mRecyclewView.getAdapter()).expandAll();
+                }
+                isExpanded = !isExpanded;
+            }
+        });
     }
 }

@@ -17,6 +17,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by yuyuhang on 2017/11/29.
  */
@@ -26,6 +29,10 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
 
     private JSONObject mJSONObject;
     private JSONArray mJSONArray;
+
+    private List<JsonItemViewHolder> viewHolders = new ArrayList<>();
+
+    private List<JsonItemClickListener> clickListeners = new ArrayList<>();
 
     public JsonViewerAdapter(String jsonStr) {
         this.jsonStr = jsonStr;
@@ -59,9 +66,13 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         }
     }
 
+    //This creates a viewHolder for each top-level JSON object. The viewHolder is not recyclable,
+    //and hence each top-level JSON object has its own unique viewHolder
     @Override
     public JsonItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new JsonItemViewHolder(new JsonItemView(parent.getContext()));
+        JsonItemViewHolder viewHolder = new JsonItemViewHolder(new JsonItemView(parent.getContext()));
+        viewHolders.add(viewHolder);
+        return viewHolder;
     }
 
     @Override
@@ -117,17 +128,18 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
 
     @Override
     public int getItemCount() {
+        //The initial count is the total number of top-level JSON objects plus two for curly brakets
+        int count = 0;
         if (mJSONObject != null) {
             if (mJSONObject.names() != null) {
-                return mJSONObject.names().length() + 2;
+                count = mJSONObject.names().length() + 2;
             } else {
-                return 2;
+                count = 2;
             }
+        } else if (mJSONArray != null) {
+            count = mJSONArray.length() + 2;
         }
-        if (mJSONArray != null) {
-            return mJSONArray.length() + 2;
-        }
-        return 0;
+        return count;
     }
 
     /**
@@ -182,7 +194,9 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             itemView.showIcon(true);
             valueBuilder.append("Object{...}");
             valueBuilder.setSpan(new ForegroundColorSpan(BRACES_COLOR), 0, valueBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            itemView.setIconClickListener(new JsonItemClickListener(value, itemView, appendComma, hierarchy + 1));
+            JsonItemClickListener listener = new JsonItemClickListener(value, itemView, appendComma, hierarchy + 1);
+            clickListeners.add(listener);
+            itemView.setIconClickListener(listener);
         } else if (value instanceof JSONArray) {
             itemView.showIcon(true);
             valueBuilder.append("Array[").append(String.valueOf(((JSONArray) value).length())).append("]");
@@ -190,7 +204,10 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             valueBuilder.setSpan(new ForegroundColorSpan(BRACES_COLOR), 0, 6, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             valueBuilder.setSpan(new ForegroundColorSpan(NUMBER_COLOR), 6, len - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             valueBuilder.setSpan(new ForegroundColorSpan(BRACES_COLOR), len - 1, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            itemView.setIconClickListener(new JsonItemClickListener(value, itemView, appendComma, hierarchy + 1));
+
+            JsonItemClickListener listener = new JsonItemClickListener(value, itemView, appendComma, hierarchy + 1);
+            clickListeners.add(listener);
+            itemView.setIconClickListener(listener);
         } else if (value instanceof String) {
             itemView.hideIcon();
             valueBuilder.append("\"").append(value.toString()).append("\"");
@@ -279,11 +296,19 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
     }
 
     public void expandAll() {
-
+        for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
+            if(clickListeners.get(i).hierarchy < 6) {
+                clickListeners.get(i).expand();
+            }
+        }
     }
 
     public void collapseAll() {
-
+        for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
+            if(clickListeners.get(i).hierarchy < 6) {
+                clickListeners.get(i).collapse();
+            }
+        }
     }
 
     class JsonItemViewHolder extends RecyclerView.ViewHolder {
@@ -318,6 +343,18 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         @Override
         public void onClick(View view) {
             isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
+        }
+
+        public void expand() {
+            if (isCollapsed) {
+                isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
+            }
+        }
+
+        public void collapse() {
+            if (!isCollapsed) {
+                isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
+            }
         }
     }
 }
