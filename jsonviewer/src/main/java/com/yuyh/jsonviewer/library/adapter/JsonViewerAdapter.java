@@ -1,5 +1,6 @@
 package com.yuyh.jsonviewer.library.adapter;
 
+import android.content.Context;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -35,9 +36,9 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        if (object != null && object instanceof JSONObject) {
+        if (object instanceof JSONObject) {
             mJSONObject = (JSONObject) object;
-        } else if (object != null && object instanceof JSONArray) {
+        } else if (object instanceof JSONArray) {
             mJSONArray = (JSONArray) object;
         } else {
             throw new IllegalArgumentException("jsonStr is illegal.");
@@ -212,6 +213,90 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         itemView.showRight(valueBuilder);
     }
 
+    private boolean toggleExpandCollapse(JsonItemView itemView, Object value, boolean isCollapsed, int hierarchy, boolean isJsonArray, boolean appendComma) {
+        if (itemView.getChildCount() == 1) {
+            //Expand...
+            isCollapsed = false;
+            itemView.showIcon(false);
+            itemView.setTag(itemView.getRightText());
+            itemView.showRight(isJsonArray ? "[" : "{");
+
+            //...add children if there are any
+            JSONArray array = isJsonArray ? (JSONArray) value : ((JSONObject) value).names();
+            for (int i = 0; array != null && i < array.length(); i++) {
+                addJsonItemView(itemView, value, array.opt(i), hierarchy, isJsonArray, i < array.length() - 1);
+            }
+            addRightBracket(itemView, hierarchy, isJsonArray, appendComma);
+
+        } else {
+            //Collapse if expanded and vice versa. Applies to the last object in the JSON tree branch
+            toggleExpandCollapse(itemView, isCollapsed);
+            isCollapsed = !isCollapsed;
+        }
+        return isCollapsed;
+    }
+
+    private void toggleExpandCollapse(JsonItemView itemView, boolean isCollapsed) {
+        CharSequence temp = itemView.getRightText();
+        itemView.showRight((CharSequence) itemView.getTag());
+        itemView.setTag(temp);
+        itemView.showIcon(!isCollapsed);
+        for (int i = 1; i < itemView.getChildCount(); i++) {
+            itemView.getChildAt(i).setVisibility(isCollapsed ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private View createRightBracketView(Context context, int hierarchy, boolean isJsonArray, boolean appendComma) {
+        JsonItemView childItemView = new JsonItemView(context);
+        childItemView.setTextSize(TEXT_SIZE_DP);
+        childItemView.setRightColor(BRACES_COLOR);
+
+        StringBuilder builder = new StringBuilder(Utils.getHierarchyStr(hierarchy - 1));
+        builder.append(isJsonArray ? "]" : "}").append(appendComma ? "," : "");
+        childItemView.showRight(builder);
+
+        return childItemView;
+    }
+
+    private void addRightBracket(JsonItemView itemView, int hierarchy, boolean isJsonArray, boolean appendComma) {
+        View rightBracket = createRightBracketView(itemView.getContext(), hierarchy, isJsonArray, appendComma);
+        itemView.addViewNoInvalidate(rightBracket);
+        itemView.requestLayout();
+        itemView.invalidate();
+    }
+
+    private void addJsonItemView(JsonItemView itemView, Object value, Object childValue, int hierarchy, boolean isJsonArray, boolean appendComma) {
+        JsonItemView childItemView = new JsonItemView(itemView.getContext());
+        childItemView.setTextSize(TEXT_SIZE_DP);
+        childItemView.setRightColor(BRACES_COLOR);
+
+        if (isJsonArray) {
+            handleJsonArray(childValue, childItemView, appendComma, hierarchy);
+        } else {
+            handleJsonObject((String) childValue, ((JSONObject) value).opt((String) childValue), childItemView, appendComma, hierarchy);
+        }
+        itemView.addViewNoInvalidate(childItemView);
+    }
+
+    public void expandAll() {
+
+    }
+
+    public void collapseAll() {
+
+    }
+
+    class JsonItemViewHolder extends RecyclerView.ViewHolder {
+
+        JsonItemView itemView;
+
+        JsonItemViewHolder(JsonItemView itemView) {
+            super(itemView);
+            setIsRecyclable(false);
+            this.itemView = itemView;
+        }
+    }
+
     class JsonItemClickListener implements View.OnClickListener {
 
         private Object value;
@@ -227,60 +312,12 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             this.itemView = itemView;
             this.appendComma = appendComma;
             this.hierarchy = hierarchy;
-            this.isJsonArray = value != null && value instanceof JSONArray;
+            this.isJsonArray = value instanceof JSONArray;
         }
 
         @Override
         public void onClick(View view) {
-            if (itemView.getChildCount() == 1) { // 初始（折叠） --> 展开""
-                isCollapsed = false;
-                itemView.showIcon(false);
-                itemView.setTag(itemView.getRightText());
-                itemView.showRight(isJsonArray ? "[" : "{");
-                JSONArray array = isJsonArray ? (JSONArray) value : ((JSONObject) value).names();
-                for (int i = 0; array != null && i < array.length(); i++) {
-                    JsonItemView childItemView = new JsonItemView(itemView.getContext());
-                    childItemView.setTextSize(TEXT_SIZE_DP);
-                    childItemView.setRightColor(BRACES_COLOR);
-                    Object childValue = array.opt(i);
-                    if (isJsonArray) {
-                        handleJsonArray(childValue, childItemView, i < array.length() - 1, hierarchy);
-                    } else {
-                        handleJsonObject((String) childValue, ((JSONObject) value).opt((String) childValue), childItemView, i < array.length() - 1, hierarchy);
-                    }
-                    itemView.addViewNoInvalidate(childItemView);
-                }
-
-                JsonItemView childItemView = new JsonItemView(itemView.getContext());
-                childItemView.setTextSize(TEXT_SIZE_DP);
-                childItemView.setRightColor(BRACES_COLOR);
-                StringBuilder builder = new StringBuilder(Utils.getHierarchyStr(hierarchy - 1));
-                builder.append(isJsonArray ? "]" : "}").append(appendComma ? "," : "");
-                childItemView.showRight(builder);
-                itemView.addViewNoInvalidate(childItemView);
-                itemView.requestLayout();
-                itemView.invalidate();
-            } else {                            // 折叠 <--> 展开
-                CharSequence temp = itemView.getRightText();
-                itemView.showRight((CharSequence) itemView.getTag());
-                itemView.setTag(temp);
-                itemView.showIcon(!isCollapsed);
-                for (int i = 1; i < itemView.getChildCount(); i++) {
-                    itemView.getChildAt(i).setVisibility(isCollapsed ? View.VISIBLE : View.GONE);
-                }
-                isCollapsed = !isCollapsed;
-            }
-        }
-    }
-
-    class JsonItemViewHolder extends RecyclerView.ViewHolder {
-
-        JsonItemView itemView;
-
-        JsonItemViewHolder(JsonItemView itemView) {
-            super(itemView);
-            setIsRecyclable(false);
-            this.itemView = itemView;
+            isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
         }
     }
 }
