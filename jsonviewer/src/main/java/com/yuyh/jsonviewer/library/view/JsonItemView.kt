@@ -5,20 +5,16 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import com.yuyh.jsonviewer.library.R
 import com.yuyh.jsonviewer.library.bracesColor
+import com.yuyh.jsonviewer.library.databinding.JsonItemViewBinding
 import org.json.JSONArray
+import kotlinx.android.synthetic.main.json_item_view.view.*
 
 class JsonItemView @JvmOverloads constructor(private val mContext: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0)
     : LinearLayout(mContext, attrs, defStyleAttr) {
-
-    private lateinit var mTvLeft: TextView
-    private lateinit var mTvRight: TextView
-    private lateinit var mIvIcon: ImageView
-
+    
     var textSizeDp = 12f
         set(value) {
             field = when {
@@ -27,17 +23,17 @@ class JsonItemView @JvmOverloads constructor(private val mContext: Context, attr
                 else -> value
             }
 
-            mTvLeft.textSize = field
-            mTvRight.textSize = field
-            mTvRight.setTextColor(bracesColor)
+            tv_left.textSize = field
+            tv_right.textSize = field
+            tv_right.setTextColor(bracesColor)
 
             // align the vertically expand/collapse icon to the text
             val textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, field, resources.displayMetrics).toInt()
-            val layoutParams = mIvIcon.layoutParams as LayoutParams
+            val layoutParams = iv_icon.layoutParams as LayoutParams
             layoutParams.height = textSize
             layoutParams.width = textSize
             layoutParams.topMargin = textSize / 5
-            mIvIcon.layoutParams = layoutParams
+            iv_icon.layoutParams = layoutParams
         }
 
     var value: Any? = null
@@ -53,57 +49,54 @@ class JsonItemView @JvmOverloads constructor(private val mContext: Context, attr
 
     init {
         orientation = VERTICAL
-        LayoutInflater.from(mContext).inflate(R.layout.jsonviewer_layout_item_view, this, true)
-        mTvLeft = findViewById(R.id.tv_left)
-        mTvRight = findViewById(R.id.tv_right)
-        mIvIcon = findViewById(R.id.iv_icon)
+        JsonItemViewBinding.inflate(LayoutInflater.from(mContext), this, true)
     }
 
     fun setRightColor(color: Int) {
-        mTvRight.setTextColor(color)
+        tv_right.setTextColor(color)
     }
 
     fun hideLeft() {
-        mTvLeft.visibility = View.GONE
+        tv_left.visibility = View.GONE
     }
 
     fun showLeft(text: CharSequence?) {
-        mTvLeft.visibility = View.VISIBLE
+        tv_left.visibility = View.VISIBLE
         if (text != null) {
-            mTvLeft.text = text
+            tv_left.text = text
         }
     }
 
     fun hideRight() {
-        mTvRight.visibility = View.GONE
+        tv_right.visibility = View.GONE
     }
 
     fun showRight(text: CharSequence?) {
-        mTvRight.visibility = View.VISIBLE
+        tv_right.visibility = View.VISIBLE
         if (text != null) {
-            mTvRight.text = text
+            tv_right.text = text
         }
     }
 
     val rightText: CharSequence
-        get() = mTvRight.text
+        get() = tv_right.text
 
     fun hideIcon() {
-        mIvIcon.visibility = View.GONE
+        iv_icon.visibility = View.GONE
     }
 
     fun showIcon(isPlus: Boolean) {
-        mIvIcon.visibility = View.VISIBLE
-        mIvIcon.setImageResource(if (isPlus) R.drawable.jsonviewer_plus else R.drawable.jsonviewer_minus)
-        mIvIcon.contentDescription = resources.getString(if (isPlus) R.string.jsonViewer_icon_plus else R.string.jsonViewer_icon_minus)
+        iv_icon.visibility = View.VISIBLE
+        iv_icon.setImageResource(if (isPlus) R.drawable.jsonviewer_plus else R.drawable.jsonviewer_minus)
+        iv_icon.contentDescription = resources.getString(if (isPlus) R.string.jsonViewer_icon_plus else R.string.jsonViewer_icon_minus)
     }
 
     //If anything in this row is clicked, let's expand/collapse because it's too hard to just
     //click the +/- button
     override fun setOnClickListener(listener: OnClickListener) {
-        mIvIcon.setOnClickListener(listener)
-        mTvLeft.setOnClickListener(listener)
-        mTvRight.setOnClickListener(listener)
+        iv_icon.setOnClickListener(listener)
+        tv_left.setOnClickListener(listener)
+        tv_right.setOnClickListener(listener)
         super.setOnClickListener(listener)
     }
 
