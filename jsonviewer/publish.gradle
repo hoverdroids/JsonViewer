@@ -41,17 +41,7 @@ task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
 }
-task javadoc(type: Javadoc) {
-    options.encoding = "UTF-8" // 设置编码，否则中文可能会提示出错
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-}
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
 artifacts {
-    archives javadocJar
     archives sourcesJar
 }
 Properties properties = new Properties()
