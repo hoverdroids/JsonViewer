@@ -7,6 +7,7 @@ import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,7 +25,8 @@ import java.util.List;
 /**
  * Created by yuyuhang on 2017/11/29.
  */
-public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.JsonItemViewHolder> {
+public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.JsonItemViewHolder>
+        implements View.OnClickListener {
 
     private String jsonStr;
 
@@ -32,8 +34,6 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
     private JSONArray mJSONArray;
 
     private List<JsonItemViewHolder> viewHolders = new ArrayList<>();
-
-    private List<JsonItemClickListener> clickListeners = new ArrayList<>();
 
     public JsonViewerAdapter(String jsonStr) {
         this.jsonStr = jsonStr;
@@ -96,10 +96,10 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         //The linear layout has three children: left, +/-, right
         //ie, the first child, or the children are each a JsonItemView
         //So, go through each level and expand
-        for (int i = 0; i < itemView.getChildCount(); i++) {
+        /*for (int i = 0; i < itemView.getChildCount(); i++) {
             JsonItemView childItemView = (JsonItemView) itemView.getChildAt(i);
             childItemView
-        }
+        }*/
     }
 
     @Override
@@ -194,27 +194,36 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         if (value instanceof Number) {
             valueBuilder.append(value.toString());
             valueBuilder.setSpan(new ForegroundColorSpan(NUMBER_COLOR), 0, valueBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
         } else if (value instanceof Boolean) {
             valueBuilder.append(value.toString());
             valueBuilder.setSpan(new ForegroundColorSpan(BOOLEAN_COLOR), 0, valueBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
         } else if (value instanceof JSONObject) {
-            itemView.showIcon(true);
+
             valueBuilder.append("Object{...}");
             valueBuilder.setSpan(new ForegroundColorSpan(BRACES_COLOR), 0, valueBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            JsonItemClickListener listener = new JsonItemClickListener(value, itemView, appendComma, hierarchy + 1);
-            clickListeners.add(listener);
-            itemView.setIconClickListener(listener);
-        } else if (value instanceof JSONArray) {
+
             itemView.showIcon(true);
+            itemView.setValue(value);
+            itemView.setAppendComma(appendComma);
+            itemView.setHierarchy(hierarchy + 1);
+            itemView.setOnClickListener(this);
+
+        } else if (value instanceof JSONArray) {
+
             valueBuilder.append("Array[").append(String.valueOf(((JSONArray) value).length())).append("]");
             int len = valueBuilder.length();
             valueBuilder.setSpan(new ForegroundColorSpan(BRACES_COLOR), 0, 6, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             valueBuilder.setSpan(new ForegroundColorSpan(NUMBER_COLOR), 6, len - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             valueBuilder.setSpan(new ForegroundColorSpan(BRACES_COLOR), len - 1, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-            JsonItemClickListener listener = new JsonItemClickListener(value, itemView, appendComma, hierarchy + 1);
-            clickListeners.add(listener);
-            itemView.setIconClickListener(listener);
+            itemView.showIcon(true);
+            itemView.setValue(value);
+            itemView.setAppendComma(appendComma);
+            itemView.setHierarchy(hierarchy + 1);
+            itemView.setOnClickListener(this);
+
         } else if (value instanceof String) {
             itemView.hideIcon();
             valueBuilder.append("\"").append(value.toString()).append("\"");
@@ -225,11 +234,13 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             } else {
                 valueBuilder.setSpan(new ForegroundColorSpan(TEXT_COLOR), 0, valueBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
+
         } else if (valueBuilder.length() == 0 || value == null) {
             itemView.hideIcon();
             valueBuilder.append("null");
             valueBuilder.setSpan(new ForegroundColorSpan(NULL_COLOR), 0, valueBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+
         if (appendComma) {
             valueBuilder.append(",");
         }
@@ -303,20 +314,48 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
     }
 
     public void expandAll() {
-        for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
+        /*for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
             if(clickListeners.get(i).hierarchy < 6) {
                 clickListeners.get(i).expand();
             }
-        }
+        }*/
     }
 
     public void collapseAll() {
-        for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
+        /*for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
             if(clickListeners.get(i).hierarchy < 6) {
                 clickListeners.get(i).collapse();
             }
+        }*/
+    }
+
+    @Override
+    public void onClick(View view) {
+        JsonItemView itemView;
+        if (view instanceof JsonItemView) {
+            //The user clicked the container
+            itemView = (JsonItemView) view;
+        } else {
+            //The user click on of the children; need to get the container
+            itemView = (JsonItemView) view.getParent().getParent();
+        }
+
+        boolean isCollapsed = toggleExpandCollapse(itemView, itemView.getValue(), itemView.isCollapsed(),
+                itemView.getHierarchy(), itemView.isJsonArray(), itemView.doAppendComma());
+        itemView.setCollapsed(isCollapsed);
+    }
+
+    /*public void expand() {
+        if (isCollapsed) {
+            isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
         }
     }
+
+    public void collapse() {
+        if (!isCollapsed) {
+            isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
+        }
+    }*/
 
     class JsonItemViewHolder extends RecyclerView.ViewHolder {
 
@@ -326,42 +365,6 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             super(itemView);
             setIsRecyclable(false);
             this.itemView = itemView;
-        }
-    }
-
-    class JsonItemClickListener implements View.OnClickListener {
-
-        private Object value;
-        private JsonItemView itemView;
-        private boolean appendComma;
-        private int hierarchy;
-
-        private boolean isCollapsed = true;
-        private boolean isJsonArray;
-
-        JsonItemClickListener(Object value, JsonItemView itemView, boolean appendComma, int hierarchy) {
-            this.value = value;
-            this.itemView = itemView;
-            this.appendComma = appendComma;
-            this.hierarchy = hierarchy;
-            this.isJsonArray = value instanceof JSONArray;
-        }
-
-        @Override
-        public void onClick(View view) {
-            isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
-        }
-
-        public void expand() {
-            if (isCollapsed) {
-                isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
-            }
-        }
-
-        public void collapse() {
-            if (!isCollapsed) {
-                isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
-            }
         }
     }
 }

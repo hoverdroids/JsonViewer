@@ -14,6 +14,8 @@ import android.widget.TextView;
 import com.yuyh.jsonviewer.library.R;
 import com.yuyh.jsonviewer.library.adapter.BaseJsonViewerAdapter;
 
+import org.json.JSONArray;
+
 /**
  * Created by yuyuhang on 2017/11/29.
  */
@@ -25,6 +27,12 @@ public class JsonItemView extends LinearLayout {
 
     private TextView mTvLeft, mTvRight;
     private ImageView mIvIcon;
+
+    private Object value = null;
+    private boolean appendComma = false;
+    private int hierarchy = 0;
+    private boolean isCollapsed = true;
+    private boolean isJsonArray = false;
 
     public JsonItemView(Context context) {
         this(context, null);
@@ -117,11 +125,12 @@ public class JsonItemView extends LinearLayout {
 
     //If anything in this row is clicked, let's expand/collapse because it's too hard to just
     //click the +/- button
-    public void setIconClickListener(OnClickListener listener) {
+    @Override
+    public void setOnClickListener(OnClickListener listener) {
         mIvIcon.setOnClickListener(listener);
         mTvLeft.setOnClickListener(listener);
         mTvRight.setOnClickListener(listener);
-        this.setOnClickListener(listener);
+        super.setOnClickListener(listener);
     }
 
     public void addViewNoInvalidate(View child) {
@@ -133,5 +142,46 @@ public class JsonItemView extends LinearLayout {
             }
         }
         addViewInLayout(child, -1, params);
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+        this.isJsonArray = value instanceof JSONArray;
+    }
+
+    public boolean doAppendComma() {
+        return appendComma;
+    }
+
+    public void setAppendComma(boolean appendComma) {
+        this.appendComma = appendComma;
+    }
+
+    public int getHierarchy() {
+        return hierarchy;
+    }
+
+    public void setHierarchy(int hierarchy) {
+        this.hierarchy = hierarchy;
+    }
+
+    public boolean isCollapsed() {
+        return isCollapsed;
+    }
+
+    public void setCollapsed(boolean collapsed) {
+        isCollapsed = collapsed;
+    }
+
+    public boolean isJsonArray() {
+        return isJsonArray;
+    }
+
+    public void setIsJsonArray(boolean jsonArray) {
+        isJsonArray = jsonArray;
     }
 }
