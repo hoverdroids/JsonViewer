@@ -248,10 +248,14 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         itemView.showRight(valueBuilder);
     }
 
-    private boolean toggleExpandCollapse(JsonItemView itemView, Object value, boolean isCollapsed, int hierarchy, boolean isJsonArray, boolean appendComma) {
+    private void toggleExpandCollapse(JsonItemView itemView) {
         if (itemView.getChildCount() == 1) {
+            Object value = itemView.getValue();
+            int hierarchy = itemView.getHierarchy();
+            boolean isJsonArray = itemView.isJsonArray();
+
             //Expand...
-            isCollapsed = false;
+            itemView.setCollapsed(false);
             itemView.showIcon(false);
             itemView.setTag(itemView.getRightText());
             itemView.showRight(isJsonArray ? "[" : "{");
@@ -261,23 +265,22 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             for (int i = 0; array != null && i < array.length(); i++) {
                 addJsonItemView(itemView, value, array.opt(i), hierarchy, isJsonArray, i < array.length() - 1);
             }
-            addRightBracket(itemView, hierarchy, isJsonArray, appendComma);
+            addRightBracket(itemView, hierarchy, isJsonArray, itemView.doAppendComma());
 
         } else {
             //Collapse if expanded and vice versa. Applies to the last object in the JSON tree branch
-            toggleExpandCollapse(itemView, isCollapsed);
-            isCollapsed = !isCollapsed;
+            showExpandCollapse(itemView);
+            itemView.setCollapsed(!itemView.isCollapsed());
         }
-        return isCollapsed;
     }
 
-    private void toggleExpandCollapse(JsonItemView itemView, boolean isCollapsed) {
+    private void showExpandCollapse(JsonItemView itemView) {
         CharSequence temp = itemView.getRightText();
         itemView.showRight((CharSequence) itemView.getTag());
         itemView.setTag(temp);
-        itemView.showIcon(!isCollapsed);
+        itemView.showIcon(!itemView.isCollapsed());
         for (int i = 1; i < itemView.getChildCount(); i++) {
-            itemView.getChildAt(i).setVisibility(isCollapsed ? View.VISIBLE : View.GONE);
+            itemView.getChildAt(i).setVisibility(itemView.isCollapsed() ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -331,18 +334,13 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
 
     @Override
     public void onClick(View view) {
-        JsonItemView itemView;
         if (view instanceof JsonItemView) {
             //The user clicked the container
-            itemView = (JsonItemView) view;
+            toggleExpandCollapse((JsonItemView) view);
         } else {
             //The user click on of the children; need to get the container
-            itemView = (JsonItemView) view.getParent().getParent();
+            toggleExpandCollapse((JsonItemView) view.getParent().getParent());
         }
-
-        boolean isCollapsed = toggleExpandCollapse(itemView, itemView.getValue(), itemView.isCollapsed(),
-                itemView.getHierarchy(), itemView.isJsonArray(), itemView.doAppendComma());
-        itemView.setCollapsed(isCollapsed);
     }
 
     /*public void expand() {
