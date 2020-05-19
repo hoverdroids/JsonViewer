@@ -4,20 +4,24 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.size
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.yuyh.jsonviewer.library.adapter.JsonItemViewHolder
-import com.yuyh.jsonviewer.library.adapter.JsonViewerAdapter
+import com.yuyh.jsonviewer.library.adapter.*
 import com.yuyh.jsonviewer.library.view.JsonItemView
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlin.math.sqrt
 
-class JsonRecyclerView constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0)
-    : RecyclerView(context, attrs, defStyle) {
+class JsonRecyclerView : RecyclerView {
 
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
+    
     private var mAdapter: JsonViewerAdapter? = null
 
-    private fun initView() {
+    init {
         layoutManager = LinearLayoutManager(context)
     }
 
@@ -40,87 +44,82 @@ class JsonRecyclerView constructor(context: Context, attrs: AttributeSet? = null
     }
 
     fun setKeyColor(color: Int) {
-        mAdapter?.keyColor = color
+        keyColor = color
     }
 
     fun setValueTextColor(color: Int) {
-        mAdapter?.textColor = color
+        textColor = color
     }
 
     fun setValueNumberColor(color: Int) {
-        mAdapter?.numberColor = color
+        numberColor = color
     }
 
     fun setValueBooleanColor(color: Int) {
-        mAdapter?.booleanColor = color
+        booleanColor = color
     }
 
     fun setValueUrlColor(color: Int) {
-        mAdapter?.urlColor = color
+        urlColor = color
     }
 
     fun setValueNullColor(color: Int) {
-        mAdapter?.numberColor = color
+        numberColor = color
     }
 
     fun setBracesColor(color: Int) {
-        mAdapter?.bracesColor = color
+        bracesColor = color
     }
 
     fun setTextSize(sizeDP: Float) {
-        var sizeDP = sizeDP
-        if (sizeDP < 10) {
-            sizeDP = 10f
-        } else if (sizeDP > 30) {
-            sizeDP = 30f
+        val boundedSize = when {
+            sizeDP < 10 -> 10f
+            sizeDP > 30 -> 30f
+            else -> sizeDP
         }
-        if (mAdapter?.textSizeDp != sizeDP) {
-            mAdapter?.textSizeDp = sizeDP
-            if (mAdapter != null) {
-                updateAll(sizeDP)
-            }
+
+        if (textSizeDp != boundedSize) {
+            textSizeDp = boundedSize
+            mAdapter?.let{ updateAll(boundedSize) }
         }
     }
 
-    fun setScaleEnable(enable: Boolean) {
-        if (enable) {
-            addOnItemTouchListener(touchListener)
-        } else {
-            removeOnItemTouchListener(touchListener)
-        }
-    }
-
-    fun updateAll(textSize: Float) {
-        val manager = layoutManager
-        val count = manager!!.childCount
+    private fun updateAll(textSize: Float) {
+        val count = layoutManager?.childCount ?: 0
         for (i in 0 until count) {
-            val view = manager.getChildAt(i)
+            val view = layoutManager?.getChildAt(i)
             loop(view, textSize)
         }
     }
 
     private fun loop(view: View?, textSize: Float) {
         if (view is JsonItemView) {
-            val group = view
-            group.setTextSize(textSize)
-            val childCount = group.childCount
+            view.textSizeDp = textSize
+            val childCount = view.childCount
             for (i in 0 until childCount) {
-                val view1 = group.getChildAt(i)
+                val view1 = view.getChildAt(i)
                 loop(view1, textSize)
             }
+        }
+    }
+
+    fun setScaleEnable(enable: Boolean) {
+        when(enable){
+            true -> addOnItemTouchListener(touchListener)
+            else -> removeOnItemTouchListener(touchListener)
         }
     }
 
     var mode = 0
     var oldDist = 0f
     private fun zoom(f: Float) {
-        mAdapter?.textSizeDp?.let { setTextSize(it) }
+        setTextSize(textSizeDp * f)
     }
 
     private fun spacing(event: MotionEvent): Float {
         val x = event.getX(0) - event.getX(1)
         val y = event.getY(0) - event.getY(1)
-        return Math.sqrt(x * x + y * y.toDouble()).toFloat()
+        return sqrt(x * x + y * y.toDouble()).toFloat()
     }
 
     private val touchListener: OnItemTouchListener = object : OnItemTouchListener {
@@ -149,34 +148,32 @@ class JsonRecyclerView constructor(context: Context, attrs: AttributeSet? = null
     }
 
     fun expandAllToDepth(depth: Int) {
-        val adapter = adapter as JsonViewerAdapter?
-        adapter!!.depth = depth //Just in case new items are displayed, this shows them at the correct depth
-        val childCount = childCount
-        var i = 0
-        while (i < childCount) {
-            val holder = getChildViewHolder(getChildAt(i)) as JsonItemViewHolder
-            if (holder.jsonItemView.isCollapsed) {
-                adapter.expandToDepth(holder.jsonItemView, depth) //this shows the currently displayed items at the correct depth
+        mAdapter?.let {
+            it.depth = depth //Just in case new items are displayed, this shows them at the correct depth
+            val childCount = childCount
+            var i = 0
+            while (i < childCount) {
+                val holder = getChildViewHolder(getChildAt(i)) as JsonItemViewHolder
+                if (holder.jsonItemView.isCollapsed) {
+                    it.expandToDepth(holder.jsonItemView, depth) //this shows the currently displayed items at the correct depth
+                }
+                ++i
             }
-            ++i
         }
     }
 
     fun collapseAll() {
-        val adapter = adapter as JsonViewerAdapter?
-        adapter!!.depth = 0 //Just in case new items are displayed, this shows them at the correct depth
-        val childCount = childCount
-        var i = 0
-        while (i < childCount) {
-            val holder = getChildViewHolder(getChildAt(i)) as JsonItemViewHolder
-            if (!holder.jsonItemView.isCollapsed) {
-                adapter.toggleExpandCollapse(holder.jsonItemView) //this shows the currently displayed items at the correct depth
+        mAdapter?.let {
+            it.depth = 0 //Just in case new items are displayed, this shows them at the correct depth
+            val childCount = childCount
+            var i = 0
+            while (i < childCount) {
+                val holder = getChildViewHolder(getChildAt(i)) as JsonItemViewHolder
+                if (!holder.jsonItemView.isCollapsed) {
+                    it.toggleExpandCollapse(holder.jsonItemView) //this shows the currently displayed items at the correct depth
+                }
+                ++i
             }
-            ++i
         }
-    }
-
-    init {
-        initView()
     }
 }

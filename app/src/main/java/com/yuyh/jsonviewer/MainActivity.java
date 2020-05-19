@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yuyh.jsonviewer.library.JsonRecyclerView;
-import com.yuyh.jsonviewer.library.adapter.JsonViewerAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;

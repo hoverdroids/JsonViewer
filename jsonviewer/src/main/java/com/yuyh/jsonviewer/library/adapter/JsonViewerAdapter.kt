@@ -7,6 +7,7 @@ import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.yuyh.jsonviewer.library.*
 import com.yuyh.jsonviewer.library.utils.Utils
 import com.yuyh.jsonviewer.library.view.JsonItemView
 import org.json.JSONArray
@@ -20,15 +21,6 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
     private var mJSONObject: JSONObject? = null
     private var mJSONArray: JSONArray? = null
     var depth = 0
-
-    var keyColor = -0x6dd867
-    var textColor = -0xc54ab6
-    var numberColor = -0xda551e
-    var booleanColor = -0x67d80
-    var urlColor = -0x992d2b
-    var nullColor = -0x10a6cb
-    var bracesColor = -0xb5aaa1
-    var textSizeDp = 12f
 
     constructor(jsonStr: String?) {
         this.jsonStr = jsonStr
@@ -68,7 +60,7 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
 
         //Create the top-level view for the top-level JSON object
         val itemView: JsonItemView = holder.jsonItemView
-        itemView.setTextSize(textSizeDp)
+        itemView.textSizeDp = textSizeDp
         itemView.setRightColor(bracesColor)
 
         //The top level can't be both an Object and Array. So, only one of the following does
@@ -163,17 +155,20 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
         if (value is Number) {
             valueBuilder.append(value.toString())
             valueBuilder.setSpan(ForegroundColorSpan(numberColor), 0, valueBuilder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
         } else if (value is Boolean) {
             valueBuilder.append(value.toString())
             valueBuilder.setSpan(ForegroundColorSpan(booleanColor), 0, valueBuilder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
         } else if (value is JSONObject) {
             valueBuilder.append("Object{...}")
             valueBuilder.setSpan(ForegroundColorSpan(bracesColor), 0, valueBuilder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             itemView.showIcon(true)
             itemView.value = value
-            itemView.setAppendComma(appendComma)
+            itemView.appendComma = appendComma
             itemView.hierarchy = hierarchy + 1
             itemView.setOnClickListener(this)
+
         } else if (value is JSONArray) {
             valueBuilder.append("Array[").append(value.length().toString()).append("]")
             val len = valueBuilder.length
@@ -182,9 +177,10 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
             valueBuilder.setSpan(ForegroundColorSpan(bracesColor), len - 1, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             itemView.showIcon(true)
             itemView.value = value
-            itemView.setAppendComma(appendComma)
+            itemView.appendComma = appendComma
             itemView.hierarchy = hierarchy + 1
             itemView.setOnClickListener(this)
+
         } else if (value is String) {
             itemView.hideIcon()
             valueBuilder.append("\"").append(value.toString()).append("\"")
@@ -195,11 +191,13 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
             } else {
                 valueBuilder.setSpan(ForegroundColorSpan(textColor), 0, valueBuilder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
-        } else if (valueBuilder.length == 0 || value == null) {
+
+        } else if (valueBuilder.isEmpty() || value == null) {
             itemView.hideIcon()
             valueBuilder.append("null")
             valueBuilder.setSpan(ForegroundColorSpan(nullColor), 0, valueBuilder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
+
         if (appendComma) {
             valueBuilder.append(",")
         }
@@ -210,8 +208,7 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
         val newItemViews: MutableList<JsonItemView> = ArrayList()
         val value = itemView.value
         if (value !is JSONArray && value !is JSONObject) {
-            //value instanceof String && (value.equals("{") || value.equals("}") || value.equals("[") || value.equals("]"))
-            //Do nothing as the value is just a
+            //Do nothing as the value is just a bracket or brace
         } else if (itemView.childCount == 1) {
             val hierarchy = itemView.hierarchy
             val isJsonArray = itemView.isJsonArray
@@ -230,7 +227,7 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
                 newItemViews.add(newItemView)
                 i++
             }
-            addRightBracket(itemView, hierarchy, isJsonArray, itemView.doAppendComma())
+            addRightBracket(itemView, hierarchy, isJsonArray, itemView.appendComma)
         } else {
             //Collapse if expanded and vice versa. Applies to the last object in the JSON tree branch
             showExpandCollapse(itemView)
@@ -251,7 +248,7 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
 
     private fun createRightBracketView(context: Context, hierarchy: Int, isJsonArray: Boolean, appendComma: Boolean): View {
         val childItemView = JsonItemView(context)
-        childItemView.setTextSize(textSizeDp)
+        childItemView.textSizeDp = textSizeDp
         childItemView.setRightColor(bracesColor)
         val builder = StringBuilder(Utils.getHierarchyStr(hierarchy - 1))
         builder.append(if (isJsonArray) "]" else "}").append(if (appendComma) "," else "")
@@ -268,7 +265,7 @@ class JsonViewerAdapter : RecyclerView.Adapter<JsonItemViewHolder>, View.OnClick
 
     private fun addJsonItemView(parentItemView: JsonItemView, value: Any, childValue: Any, hierarchy: Int, isJsonArray: Boolean, appendComma: Boolean): JsonItemView {
         val itemView = JsonItemView(parentItemView.context)
-        itemView.setTextSize(textSizeDp)
+        itemView.textSizeDp = textSizeDp
         itemView.setRightColor(bracesColor)
         if (isJsonArray) {
             handleJsonArray(childValue, itemView, appendComma, hierarchy)
