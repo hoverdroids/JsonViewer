@@ -91,10 +91,13 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         handleTopLevelJsonArray(mJSONArray, itemView, position);
 
         //Don't collapse/expand the outter-most brackets/braces
-        if(position > 0 && position < getItemCount() - 1) {
+        //if(position > 0 && position < getItemCount() - 1) {
             //Automatically get the children and show them as expanded or collapsed based on depth
-            toggleExpandCollapse(itemView);
-        }
+            List<JsonItemView> childItemViews = toggleExpandCollapse(itemView);
+            for(int i = 0; i < childItemViews.size(); i++) {
+                toggleExpandCollapse(childItemViews.get(i));
+            }
+        //}
     }
 
     @Override
@@ -243,9 +246,14 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         itemView.showRight(valueBuilder);
     }
 
-    private void toggleExpandCollapse(JsonItemView itemView) {
-        if (itemView.getChildCount() == 1) {
-            Object value = itemView.getValue();
+    private List<JsonItemView> toggleExpandCollapse(JsonItemView itemView) {
+        List<JsonItemView> newItemViews = new ArrayList<JsonItemView>();
+        Object value = itemView.getValue();
+
+        if (!(value instanceof JSONArray) && !(value instanceof JSONObject)) {
+            //value instanceof String && (value.equals("{") || value.equals("}") || value.equals("[") || value.equals("]"))
+            //Do nothing as the value is just a
+        } else if (itemView.getChildCount() == 1) {
             int hierarchy = itemView.getHierarchy();
             boolean isJsonArray = itemView.isJsonArray();
 
@@ -258,7 +266,8 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             //...add children if there are any
             JSONArray array = isJsonArray ? (JSONArray) value : ((JSONObject) value).names();
             for (int i = 0; array != null && i < array.length(); i++) {
-                addJsonItemView(itemView, value, array.opt(i), hierarchy, isJsonArray, i < array.length() - 1);
+                JsonItemView newItemView = addJsonItemView(itemView, value, array.opt(i), hierarchy, isJsonArray, i < array.length() - 1);
+                newItemViews.add(newItemView);
             }
             addRightBracket(itemView, hierarchy, isJsonArray, itemView.doAppendComma());
 
@@ -267,6 +276,8 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             showExpandCollapse(itemView);
             itemView.setCollapsed(!itemView.isCollapsed());
         }
+
+        return newItemViews;
     }
 
     private void showExpandCollapse(JsonItemView itemView) {
@@ -298,17 +309,18 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         itemView.invalidate();
     }
 
-    private void addJsonItemView(JsonItemView itemView, Object value, Object childValue, int hierarchy, boolean isJsonArray, boolean appendComma) {
-        JsonItemView childItemView = new JsonItemView(itemView.getContext());
-        childItemView.setTextSize(TEXT_SIZE_DP);
-        childItemView.setRightColor(BRACES_COLOR);
+    private JsonItemView addJsonItemView(JsonItemView parentItemView, Object value, Object childValue, int hierarchy, boolean isJsonArray, boolean appendComma) {
+        JsonItemView itemView = new JsonItemView(parentItemView.getContext());
+        itemView.setTextSize(TEXT_SIZE_DP);
+        itemView.setRightColor(BRACES_COLOR);
 
         if (isJsonArray) {
-            handleJsonArray(childValue, childItemView, appendComma, hierarchy);
+            handleJsonArray(childValue, itemView, appendComma, hierarchy);
         } else {
-            handleJsonObject((String) childValue, ((JSONObject) value).opt((String) childValue), childItemView, appendComma, hierarchy);
+            handleJsonObject((String) childValue, ((JSONObject) value).opt((String) childValue), itemView, appendComma, hierarchy);
         }
-        itemView.addViewNoInvalidate(childItemView);
+        parentItemView.addViewNoInvalidate(itemView);
+        return itemView;
     }
 
     public void expandAll() {
