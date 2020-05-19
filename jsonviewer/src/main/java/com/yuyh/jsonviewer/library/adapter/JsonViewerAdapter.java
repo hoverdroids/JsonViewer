@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -88,6 +89,17 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         //anything for any given JSON string
         handleTopLevelJsonObject(mJSONObject, itemView, position);
         handleTopLevelJsonArray(mJSONArray, itemView, position);
+
+        //Automatically get the children and show them as expanded or collapsed based on depth
+        Log.d("Chris", itemView.toString());
+        //The top-most child is a linear layout
+        //The linear layout has three children: left, +/-, right
+        //ie, the first child, or the children are each a JsonItemView
+        //So, go through each level and expand
+        for (int i = 0; i < itemView.getChildCount(); i++) {
+            JsonItemView childItemView = (JsonItemView) itemView.getChildAt(i);
+            childItemView
+        }
     }
 
     @Override
@@ -108,7 +120,7 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
 
     private void handleTopLevelJsonObject(JSONObject jsonObject, JsonItemView itemView, int position) {
         if (jsonObject == null) return;
-        
+
         if (position == 0) {
             //First item, prefix with opening curly
             itemView.hideLeft();
