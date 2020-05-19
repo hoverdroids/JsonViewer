@@ -5,6 +5,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.yuyh.jsonviewer.library.adapter.JsonViewerAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.IOException
 import java.io.InputStream
@@ -16,6 +17,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        rv_json.depth = 3
         rv_json.setScaleEnable(true)
         rv_json.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
 

@@ -20,6 +20,11 @@ class JsonRecyclerView : RecyclerView {
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
 
     private var mAdapter: JsonViewerAdapter? = null
+    var depth = 0
+        set(value) {
+            field = value
+            mAdapter?.let { it.depth = value }
+        }
 
     init {
         layoutManager = LinearLayoutManager(context)
@@ -28,18 +33,21 @@ class JsonRecyclerView : RecyclerView {
     fun bindJson(json: String) {
         mAdapter = null
         mAdapter = JsonViewerAdapter(json)
+        mAdapter?.let { it.depth = depth }
         adapter = mAdapter
     }
 
     fun bindJson(jsonArray: JSONArray) {
         mAdapter = null
         mAdapter = JsonViewerAdapter(jsonArray)
+        mAdapter?.let { it.depth = depth }
         adapter = mAdapter
     }
 
     fun bindJson(jsonObject: JSONObject) {
         mAdapter = null
         mAdapter = JsonViewerAdapter(jsonObject)
+        mAdapter?.let { it.depth = depth }
         adapter = mAdapter
     }
 
