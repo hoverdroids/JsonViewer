@@ -93,9 +93,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (isExpanded) {
-                    ((JsonViewerAdapter)mRecyclewView.getAdapter()).collapseAll();
+                    mRecyclewView.collapseAll();
                 } else {
-                    ((JsonViewerAdapter)mRecyclewView.getAdapter()).expandAll();
+                    mRecyclewView.expandAllToDepth(2);
                 }
                 isExpanded = !isExpanded;
             }

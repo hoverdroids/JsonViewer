@@ -4,12 +4,8 @@ import android.content.Context;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
-
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.yuyh.jsonviewer.library.utils.Utils;
 import com.yuyh.jsonviewer.library.view.JsonItemView;
@@ -25,7 +21,7 @@ import java.util.List;
 /**
  * Created by yuyuhang on 2017/11/29.
  */
-public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.JsonItemViewHolder>
+public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonItemViewHolder>
         implements View.OnClickListener {
 
     private String jsonStr;
@@ -33,7 +29,7 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
     private JSONObject mJSONObject;
     private JSONArray mJSONArray;
 
-    private List<JsonItemViewHolder> viewHolders = new ArrayList<>();
+    private int depth = 0;
 
     public JsonViewerAdapter(String jsonStr) {
         this.jsonStr = jsonStr;
@@ -71,9 +67,7 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
     //and hence each top-level JSON object has its own unique viewHolder
     @Override
     public JsonItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        JsonItemViewHolder viewHolder = new JsonItemViewHolder(new JsonItemView(parent.getContext()));
-        viewHolders.add(viewHolder);
-        return viewHolder;
+        return new JsonItemViewHolder(new JsonItemView(parent.getContext()));
     }
 
     //A viewHolder is created anew each time one of the top-level JSON objects is about to be displayed
@@ -81,7 +75,7 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
     public void onBindViewHolder(JsonItemViewHolder holder, int position) {
 
         //Create the top-level view for the top-level JSON object
-        JsonItemView itemView = holder.itemView;
+        JsonItemView itemView = holder.getItemView();
         itemView.setTextSize(TEXT_SIZE_DP);
         itemView.setRightColor(BRACES_COLOR);
 
@@ -91,7 +85,7 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         handleTopLevelJsonArray(mJSONArray, itemView, position);
 
         //Automatically get the children and show them as expanded or collapsed based on depth
-        expandToDepth(itemView, 3);
+        expandToDepth(itemView, depth);
     }
 
     @Override
@@ -240,7 +234,7 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         itemView.showRight(valueBuilder);
     }
 
-    private List<JsonItemView> toggleExpandCollapse(JsonItemView itemView) {
+    public List<JsonItemView> toggleExpandCollapse(JsonItemView itemView) {
         List<JsonItemView> newItemViews = new ArrayList<JsonItemView>();
         Object value = itemView.getValue();
 
@@ -317,22 +311,6 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         return itemView;
     }
 
-    public void expandAll() {
-        /*for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
-            if(clickListeners.get(i).hierarchy < 6) {
-                clickListeners.get(i).expand();
-            }
-        }*/
-    }
-
-    public void collapseAll() {
-        /*for (int i = clickListeners.size() - 1; i >= 0 ; i--) {
-            if(clickListeners.get(i).hierarchy < 6) {
-                clickListeners.get(i).collapse();
-            }
-        }*/
-    }
-
     @Override
     public void onClick(View view) {
         if (view instanceof JsonItemView) {
@@ -375,14 +353,11 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         }
     }
 
-    class JsonItemViewHolder extends RecyclerView.ViewHolder {
+    public int getDepth() {
+        return depth;
+    }
 
-        JsonItemView itemView;
-
-        JsonItemViewHolder(JsonItemView itemView) {
-            super(itemView);
-            setIsRecyclable(false);
-            this.itemView = itemView;
-        }
+    public void setDepth(int depth) {
+        this.depth = depth;
     }
 }

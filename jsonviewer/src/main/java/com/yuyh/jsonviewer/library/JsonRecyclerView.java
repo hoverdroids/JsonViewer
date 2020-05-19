@@ -1,15 +1,16 @@
 package com.yuyh.jsonviewer.library;
 
 import android.content.Context;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.yuyh.jsonviewer.library.adapter.BaseJsonViewerAdapter;
+import com.yuyh.jsonviewer.library.adapter.JsonItemViewHolder;
 import com.yuyh.jsonviewer.library.adapter.JsonViewerAdapter;
 import com.yuyh.jsonviewer.library.view.JsonItemView;
 
@@ -190,4 +191,26 @@ public class JsonRecyclerView extends RecyclerView {
 
         }
     };
+
+    public void expandAllToDepth(int depth) {
+        JsonViewerAdapter adapter = (JsonViewerAdapter) getAdapter();
+        adapter.setDepth(depth);
+        for (int childCount = getChildCount(), i = 0; i < childCount; ++i) {
+            final JsonItemViewHolder holder = (JsonItemViewHolder) getChildViewHolder(getChildAt(i));
+            if(holder.getItemView().isCollapsed()) {
+                adapter.toggleExpandCollapse(holder.getItemView());
+            }
+        }
+    }
+
+    public void collapseAll() {
+        JsonViewerAdapter adapter = (JsonViewerAdapter) getAdapter();
+        adapter.setDepth(0);
+        for (int childCount = getChildCount(), i = 0; i < childCount; ++i) {
+            final JsonItemViewHolder holder = (JsonItemViewHolder) getChildViewHolder(getChildAt(i));
+            if(!holder.getItemView().isCollapsed()) {
+                adapter.toggleExpandCollapse(holder.getItemView());
+            }
+        }
+    }
 }
