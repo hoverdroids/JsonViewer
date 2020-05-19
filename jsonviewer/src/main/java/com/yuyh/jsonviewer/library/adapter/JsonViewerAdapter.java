@@ -322,18 +322,6 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonItemViewHolder>
         }
     }
 
-    /*public void expand() {
-        if (isCollapsed) {
-            isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
-        }
-    }
-
-    public void collapse() {
-        if (!isCollapsed) {
-            isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
-        }
-    }*/
-
     public void expandToDepth(JsonItemView itemView, int depth) {
         //Depth 0 means 0 levels down from the itemView, so just return.
         if (depth == 0) return;
@@ -343,12 +331,6 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonItemViewHolder>
         if (depth > 1) {
             for(int i = 0; i < childItemViews.size(); i++) {
                 expandToDepth(childItemViews.get(i), depth - 1);
-                //This will get you two down
-                //List<JsonItemView> childItemViews2 = toggleExpandCollapse(childItemViews.get(i));
-                //for(int j = 0; j < childItemViews.size(); j++) {
-                    //This will get you three down
-                    //toggleExpandCollapse(childItemViews2.get(i));
-                //}
             }
         }
     }

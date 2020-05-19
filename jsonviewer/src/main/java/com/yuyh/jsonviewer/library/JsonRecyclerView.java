@@ -194,22 +194,22 @@ public class JsonRecyclerView extends RecyclerView {
 
     public void expandAllToDepth(int depth) {
         JsonViewerAdapter adapter = (JsonViewerAdapter) getAdapter();
-        adapter.setDepth(depth);
+        adapter.setDepth(depth);//Just in case new items are displayed, this shows them at the correct depth
         for (int childCount = getChildCount(), i = 0; i < childCount; ++i) {
             final JsonItemViewHolder holder = (JsonItemViewHolder) getChildViewHolder(getChildAt(i));
             if(holder.getItemView().isCollapsed()) {
-                adapter.toggleExpandCollapse(holder.getItemView());
+                adapter.expandToDepth(holder.getItemView(), depth);//this shows the currently displayed items at the correct depth
             }
         }
     }
 
     public void collapseAll() {
         JsonViewerAdapter adapter = (JsonViewerAdapter) getAdapter();
-        adapter.setDepth(0);
+        adapter.setDepth(0);//Just in case new items are displayed, this shows them at the correct depth
         for (int childCount = getChildCount(), i = 0; i < childCount; ++i) {
             final JsonItemViewHolder holder = (JsonItemViewHolder) getChildViewHolder(getChildAt(i));
             if(!holder.getItemView().isCollapsed()) {
-                adapter.toggleExpandCollapse(holder.getItemView());
+                adapter.toggleExpandCollapse(holder.getItemView());//this shows the currently displayed items at the correct depth
             }
         }
     }
