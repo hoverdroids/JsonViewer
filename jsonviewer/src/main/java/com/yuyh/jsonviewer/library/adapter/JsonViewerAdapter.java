@@ -90,14 +90,8 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         handleTopLevelJsonObject(mJSONObject, itemView, position);
         handleTopLevelJsonArray(mJSONArray, itemView, position);
 
-        //Don't collapse/expand the outter-most brackets/braces
-        //if(position > 0 && position < getItemCount() - 1) {
-            //Automatically get the children and show them as expanded or collapsed based on depth
-            List<JsonItemView> childItemViews = toggleExpandCollapse(itemView);
-            for(int i = 0; i < childItemViews.size(); i++) {
-                toggleExpandCollapse(childItemViews.get(i));
-            }
-        //}
+        //Automatically get the children and show them as expanded or collapsed based on depth
+        expandToDepth(itemView, 3);
     }
 
     @Override
@@ -361,6 +355,25 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             isCollapsed = toggleExpandCollapse(itemView, value, isCollapsed, hierarchy, isJsonArray, appendComma);
         }
     }*/
+
+    public void expandToDepth(JsonItemView itemView, int depth) {
+        //Depth 0 means 0 levels down from the itemView, so just return.
+        if (depth == 0) return;
+
+        //This will get you one down
+        List<JsonItemView> childItemViews = toggleExpandCollapse(itemView);
+        if (depth > 1) {
+            for(int i = 0; i < childItemViews.size(); i++) {
+                expandToDepth(childItemViews.get(i), depth - 1);
+                //This will get you two down
+                //List<JsonItemView> childItemViews2 = toggleExpandCollapse(childItemViews.get(i));
+                //for(int j = 0; j < childItemViews.size(); j++) {
+                    //This will get you three down
+                    //toggleExpandCollapse(childItemViews2.get(i));
+                //}
+            }
+        }
+    }
 
     class JsonItemViewHolder extends RecyclerView.ViewHolder {
 
