@@ -75,55 +75,19 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         return viewHolder;
     }
 
+    //A viewHolder is created anew each time one of the top-level JSON objects is about to be displayed
     @Override
     public void onBindViewHolder(JsonItemViewHolder holder, int position) {
+
+        //Create the top-level view for the top-level JSON object
         JsonItemView itemView = holder.itemView;
         itemView.setTextSize(TEXT_SIZE_DP);
         itemView.setRightColor(BRACES_COLOR);
-        if (mJSONObject != null) {
-            if (position == 0) {
-                itemView.hideLeft();
-                itemView.hideIcon();
-                itemView.showRight("{");
-                return;
-            } else if (position == getItemCount() - 1) {
-                itemView.hideLeft();
-                itemView.hideIcon();
-                itemView.showRight("}");
-                return;
-            } else if (mJSONObject.names() == null) {
-                return;
-            }
 
-            String key = mJSONObject.names().optString(position - 1); // 遍历key
-            Object value = mJSONObject.opt(key);
-            if (position < getItemCount() - 2) {
-                handleJsonObject(key, value, itemView, true, 1);
-            } else {
-                handleJsonObject(key, value, itemView, false, 1); // 最后一组，结尾不需要逗号
-            }
-        }
-
-        if (mJSONArray != null) {
-            if (position == 0) {
-                itemView.hideLeft();
-                itemView.hideIcon();
-                itemView.showRight("[");
-                return;
-            } else if (position == getItemCount() - 1) {
-                itemView.hideLeft();
-                itemView.hideIcon();
-                itemView.showRight("]");
-                return;
-            }
-
-            Object value = mJSONArray.opt(position - 1); // 遍历array
-            if (position < getItemCount() - 2) {
-                handleJsonArray(value, itemView, true, 1);
-            } else {
-                handleJsonArray(value, itemView, false, 1); // 最后一组，结尾不需要逗号
-            }
-        }
+        //The top level can't be both an Object and Array. So, only one of the following does
+        //anything for any given JSON string
+        handleTopLevelJsonObject(mJSONObject, itemView, position);
+        handleTopLevelJsonArray(mJSONArray, itemView, position);
     }
 
     @Override
@@ -142,15 +106,60 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         return count;
     }
 
-    /**
-     * 处理 value 上级为 JsonObject 的情况，value有key
-     *
-     * @param value
-     * @param key
-     * @param itemView
-     * @param appendComma
-     * @param hierarchy
-     */
+    private void handleTopLevelJsonObject(JSONObject jsonObject, JsonItemView itemView, int position) {
+        if (jsonObject == null) return;
+        
+        if (position == 0) {
+            //First item, prefix with opening curly
+            itemView.hideLeft();
+            itemView.hideIcon();
+            itemView.showRight("{");
+            return;
+
+        } else if (position == getItemCount() - 1) {
+            //last item, suffix with closing curly
+            itemView.hideLeft();
+            itemView.hideIcon();
+            itemView.showRight("}");
+            return;
+
+        } else if (jsonObject.names() == null) {
+            return;
+        }
+
+        //Update the itemView with the Json data
+        String key = jsonObject.names().optString(position - 1);
+        Object value = jsonObject.opt(key);
+        if (position < getItemCount() - 2) {
+            handleJsonObject(key, value, itemView, true, 1);
+        } else {
+            handleJsonObject(key, value, itemView, false, 1); // 最后一组，结尾不需要逗号
+        }
+    }
+
+    private void handleTopLevelJsonArray(JSONArray jsonArray, JsonItemView itemView, int position) {
+        if (jsonArray == null) return;
+
+        if (position == 0) {
+            itemView.hideLeft();
+            itemView.hideIcon();
+            itemView.showRight("[");
+            return;
+        } else if (position == getItemCount() - 1) {
+            itemView.hideLeft();
+            itemView.hideIcon();
+            itemView.showRight("]");
+            return;
+        }
+
+        Object value = jsonArray.opt(position - 1);
+        if (position < getItemCount() - 2) {
+            handleJsonArray(value, itemView, true, 1);
+        } else {
+            handleJsonArray(value, itemView, false, 1);
+        }
+    }
+
     private void handleJsonObject(String key, Object value, JsonItemView itemView, boolean appendComma, int hierarchy) {
         SpannableStringBuilder keyBuilder = new SpannableStringBuilder(Utils.getHierarchyStr(hierarchy));
         keyBuilder.append("\"").append(key).append("\"").append(":");
@@ -162,26 +171,12 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
         handleValue(value, itemView, appendComma, hierarchy);
     }
 
-    /**
-     * 处理 value 上级为 JsonArray 的情况，value无key
-     *
-     * @param value
-     * @param itemView
-     * @param appendComma 结尾是否需要逗号(最后一组 value 不需要逗号)
-     * @param hierarchy   缩进层级
-     */
     private void handleJsonArray(Object value, JsonItemView itemView, boolean appendComma, int hierarchy) {
         itemView.showLeft(new SpannableStringBuilder(Utils.getHierarchyStr(hierarchy)));
 
         handleValue(value, itemView, appendComma, hierarchy);
     }
 
-    /**
-     * @param value
-     * @param itemView
-     * @param appendComma 结尾是否需要逗号(最后一组 key:value 不需要逗号)
-     * @param hierarchy   缩进层级
-     */
     private void handleValue(Object value, JsonItemView itemView, boolean appendComma, int hierarchy) {
         SpannableStringBuilder valueBuilder = new SpannableStringBuilder();
         if (value instanceof Number) {
